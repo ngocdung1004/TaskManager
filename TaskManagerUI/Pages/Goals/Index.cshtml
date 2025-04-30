@@ -1,0 +1,127 @@
+@page
+@model TaskManagerUI.Pages.Goals.IndexModel
+@{
+    ViewData["Title"] = "Goals";
+}
+
+<div class="container">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>Goals</h2>
+        </div>
+        <div class="col text-end">
+            <a asp-page="./Create" class="btn btn-primary">Create New Goal</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Target Date</th>
+                            <th>Goal Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="goalsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadGoals();
+        });
+
+        function getGoalTypeText(type) {
+            return type === 0 ? 'Short Term' : 'Long Term';
+        }
+
+        function getGoalStatusText(status) {
+            switch(status) {
+                case 0: return 'Not Started';
+                case 1: return 'In Progress';
+                case 2: return 'Completed';
+                default: return 'Unknown';
+            }
+        }
+
+        function loadGoals() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/Account/Login';
+                return;
+            }
+
+            $.ajax({
+                url: 'https://localhost:7149/api/Goals',
+                type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(goals) {
+                    const tbody = $('#goalsTableBody');
+                    tbody.empty();
+
+                    goals.forEach(function(goal) {
+                        const row = `
+                            <tr>
+                                <td>${goal.title}</td>
+                                <td>${goal.description || ''}</td>
+                                <td>${new Date(goal.targetDate).toLocaleString()}</td>
+                                <td>${getGoalTypeText(goal.goalType)}</td>
+                                <td>${getGoalStatusText(goal.status)}</td>
+                                <td>
+                                    <a href="/Goals/Edit?id=${goal.id}" class="btn btn-sm btn-primary">Edit</a>
+                                    <button onclick="deleteGoal(${goal.id})" class="btn btn-sm btn-danger">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        window.location.href = '/Account/Login';
+                    } else {
+                        alert('Error loading goals: ' + xhr.responseText);
+                    }
+                }
+            });
+        }
+
+        function deleteGoal(id) {
+            if (!confirm('Are you sure you want to delete this goal?')) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            $.ajax({
+                url: `https://localhost:7149/api/Goals/${id}`,
+                type: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function() {
+                    loadGoals();
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        window.location.href = '/Account/Login';
+                    } else {
+                        alert('Error deleting goal: ' + xhr.responseText);
+                    }
+                }
+            });
+        }
+    </script>
+} 

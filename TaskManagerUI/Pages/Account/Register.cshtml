@@ -1,0 +1,83 @@
+@page
+@model TaskManagerUI.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h3 class="text-center">Register</h3>
+                </div>
+                <div class="card-body">
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="fullName" name="fullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </div>
+                        <div class="text-center mt-3">
+                            <p>Already have an account? <a href="/Account/Login">Login here</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#registerForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                if ($('#password').val() !== $('#confirmPassword').val()) {
+                    alert('Passwords do not match!');
+                    return;
+                }
+
+                const registerData = {
+                    username: $('#username').val(),
+                    email: $('#email').val(),
+                    fullName: $('#fullName').val(),
+                    password: $('#password').val()
+                };
+
+                $.ajax({
+                    url: 'https://localhost:7149/api/Auth/register',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(registerData),
+                    success: function() {
+                        alert('Registration successful! Please login.');
+                        window.location.href = '/Account/Login';
+                    },
+                    error: function(xhr) {
+                        alert('Registration failed: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+} 

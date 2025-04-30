@@ -26,7 +26,6 @@ namespace TaskManager
 
             builder.Services.AddScoped<IAuthService, AuthService>();
 
-
             // Add DbContext
             builder.Services.AddDbContext<TaskManagerContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -34,11 +33,15 @@ namespace TaskManager
             // CORS
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAllOrigins",
-                    builder => builder
-                        .AllowAnyOrigin()  
-                        .AllowAnyMethod()  
-                        .AllowAnyHeader());
+                options.AddPolicy("AllowUI",
+                    builder =>
+                    {
+                        builder.WithOrigins("https://localhost:7234")
+                               .AllowAnyMethod()
+                               .AllowAnyHeader()
+                               .AllowCredentials()
+                               .WithExposedHeaders("Content-Type", "Date", "Server");
+                    });
             });
 
             //Authen in swagger
@@ -55,20 +58,21 @@ namespace TaskManager
                 });
 
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Id = "Bearer",
-                    Type = ReferenceType.SecurityScheme
-                }
-            },
-            new List<string>()
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Id = "Bearer",
+                                Type = ReferenceType.SecurityScheme
+                            }
+                        },
+                        new List<string>()
+                    }
+                });
             });
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -85,9 +89,6 @@ namespace TaskManager
                     };
                 });
 
-
-
-
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -103,7 +104,11 @@ namespace TaskManager
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
+
+            // CORS middleware must be before authentication and authorization
+            app.UseCors("AllowUI");
+
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();

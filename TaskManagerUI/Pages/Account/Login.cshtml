@@ -1,0 +1,67 @@
+@page
+@model TaskManagerUI.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h3 class="text-center">Login</h3>
+                </div>
+                <div class="card-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                        <div class="text-center mt-3">
+                            <p>Don't have an account? <a href="/Account/Register">Register here</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const loginData = {
+                    username: $('#username').val(),
+                    password: $('#password').val()
+                };
+
+                $.ajax({
+                    url: 'https://localhost:7149/api/Auth/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(loginData),
+                    success: function(response) {
+                        // Lưu token vào localStorage
+                        localStorage.setItem('token', response.token);
+                        localStorage.setItem('user', JSON.stringify(response.user));
+                        // Chuyển hướng về trang chủ
+                        window.location.href = '/';
+                    },
+                    error: function(xhr) {
+                        alert('Login failed: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+} 

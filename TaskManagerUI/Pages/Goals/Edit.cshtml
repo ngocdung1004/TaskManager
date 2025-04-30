@@ -1,0 +1,137 @@
+@page
+@model TaskManagerUI.Pages.Goals.EditModel
+@{
+    ViewData["Title"] = "Edit Goal";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Edit Goal</h3>
+                </div>
+                <div class="card-body">
+                    <form id="editGoalForm">
+                        <input type="hidden" id="goalId" />
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="targetDate" class="form-label">Target Date</label>
+                            <input type="datetime-local" class="form-control" id="targetDate" name="targetDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="goalType" class="form-label">Goal Type</label>
+                            <select class="form-select" id="goalType" name="goalType" required>
+                                <option value="0">Short Term</option>
+                                <option value="1">Long Term</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="0">Not Started</option>
+                                <option value="1">In Progress</option>
+                                <option value="2">Completed</option>
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/Account/Login';
+                return;
+            }
+
+            // Lấy ID từ URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const goalId = urlParams.get('id');
+
+            if (!goalId) {
+                window.location.href = '/Goals';
+                return;
+            }
+
+            // Load goal data
+            $.ajax({
+                url: `https://localhost:7149/api/Goals/${goalId}`,
+                type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(goal) {
+                    $('#goalId').val(goal.id);
+                    $('#title').val(goal.title);
+                    $('#description').val(goal.description);
+                    
+                    // Format date for datetime-local input
+                    const targetDate = new Date(goal.targetDate);
+                    targetDate.setMinutes(targetDate.getMinutes() - targetDate.getTimezoneOffset());
+                    $('#targetDate').val(targetDate.toISOString().slice(0, 16));
+                    
+                    $('#goalType').val(goal.goalType);
+                    $('#status').val(goal.status);
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        window.location.href = '/Account/Login';
+                    } else {
+                        alert('Error loading goal: ' + xhr.responseText);
+                        window.location.href = '/Goals';
+                    }
+                }
+            });
+
+            $('#editGoalForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const goalData = {
+                    id: parseInt($('#goalId').val()),
+                    title: $('#title').val(),
+                    description: $('#description').val(),
+                    targetDate: new Date($('#targetDate').val()).toISOString(),
+                    goalType: parseInt($('#goalType').val()),
+                    status: parseInt($('#status').val())
+                };
+
+                $.ajax({
+                    url: `https://localhost:7149/api/Goals/${goalId}`,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    data: JSON.stringify(goalData),
+                    success: function() {
+                        window.location.href = '/Goals';
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 401) {
+                            window.location.href = '/Account/Login';
+                        } else {
+                            alert('Error updating goal: ' + xhr.responseText);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+} 
